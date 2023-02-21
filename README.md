@@ -13,12 +13,12 @@ There are two types of prefix lists:
 
 In this page, we describe how to update a Customer-managed prefix list.
 ## Quick Start Guide
-0. Get Rancher Desktop (or your favourite containers runtime) installed on your device
+0. Get [Rancher Desktop](https://rancherdesktop.io/) (or your favourite containers runtime) installed on your device
 1. Clone this repository on your device:
 ```
 git clone git@github.com:ob1lan/Feed_AWS_Prefix-Lists_From_Akamai-Site-Shield.git
 ```
-2. Make sure to update the `.edgrc` and `credentials` files with your keys from Akamai and AWS respectively
+2. Make sure to update the `[.edgerc](https://techdocs.akamai.com/developer/docs/set-up-authentication-credentials)` and `[credentials](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-files.html)` files with your keys from Akamai and AWS respectively
 3. Build the container from the directory where the `Dockerfile` is located:
 ```
 nerdctl build -t akamaiawscli .
@@ -46,6 +46,7 @@ The `evaluate_pl` command will create result files under the `/output` directory
 - a file with the CIDRs in the Prefix List before applying any change
 - a file with the CIDRs proposed by Akamai for the Site Shield map
 ## TO DO
+- Handle the AWS region through a new parameter in the commands
 - Add a final step to confirm the changes have been processed and the new map addresses are ready to be applied by Akamai.
 - Fine-tune the logging and error handling
 ## Troubleshooting
