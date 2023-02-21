@@ -1,0 +1,5 @@
+[default]
+client_secret = xxxxxxxx
+host = akab-hostexample.luna.akamaiapis.net
+access_token = akab-sample
+client_token = akab-sample
