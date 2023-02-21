@@ -16,7 +16,7 @@ In this page, we describe how to update a Customer-managed prefix list.
 0. Get [Rancher Desktop](https://rancherdesktop.io/) (or your favourite containers runtime) installed on your device
 1. Clone this repository on your device:
 ```bash
-git clone git@github.com:ob1lan/Feed_AWS_Prefix-Lists_From_Akamai-Site-Shield.git
+git clone https://github.com/ob1lan/AWS_Prefix-Lists_From_Akamai-Site-Shield.git
 ```
 2. Make sure to update the [.edgerc](https://techdocs.akamai.com/developer/docs/set-up-authentication-credentials) and [credentials](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-files.html) files with your keys from Akamai and AWS respectively
 3. Build the container from the directory where the `Dockerfile` is located:
