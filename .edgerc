@@ -1,3 +1,4 @@
+# This file is the Akamai CLI credentials
 [default]
 client_secret = xxxxxxxx
 host = akab-hostexample.luna.akamaiapis.net
