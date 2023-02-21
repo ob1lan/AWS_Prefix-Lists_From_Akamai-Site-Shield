@@ -15,16 +15,16 @@ In this page, we describe how to update a Customer-managed prefix list.
 ## Quick Start Guide
 0. Get [Rancher Desktop](https://rancherdesktop.io/) (or your favourite containers runtime) installed on your device
 1. Clone this repository on your device:
-```
+```bash
 git clone git@github.com:ob1lan/Feed_AWS_Prefix-Lists_From_Akamai-Site-Shield.git
 ```
 2. Make sure to update the [.edgerc](https://techdocs.akamai.com/developer/docs/set-up-authentication-credentials) and [credentials](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-files.html) files with your keys from Akamai and AWS respectively
 3. Build the container from the directory where the `Dockerfile` is located:
-```
+```bash
 nerdctl build -t akamaiawscli .
 ```
 4. Run the container and mount the local `/output` directory into the container's `/root/output` directory:
-```
+```bash
 # To land a Shell on the container
 nerdctl run --rm -it -v $(pwd)/output:/root/output --entrypoint "/bin/bash" akamaiawscli
 
@@ -36,7 +36,7 @@ nerdctl run --rm -v $(pwd)/output:/root/output akamaiawscli -refresh_pl <pl-id> 
 ```
 Make sure to replace `<pl-id>` and `<map-name>` with the relevant values in the above commands.
 Example:
-```
+```bash
 nerdctl run --rm -v $(pwd)/output:/root/output akamaiawscli -refresh_pl pl-0b44cf237f8c0892b s15.akamaiedge.net
 ```
 The `evaluate_pl` command will create result files under the `/output` directory:
