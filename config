@@ -1,0 +1,5 @@
+# This file is used to avoid having an update notification the 1st time you run Akamai CLI
+[cli]
+cache-path         = /root/.akamai-cli/cache
+config-version     = 1.1
+last-upgrade-check = ignore
