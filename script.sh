@@ -121,7 +121,7 @@ refresh_pl() {
     currentVersion=$(aws ec2 describe-managed-prefix-lists --region $3 --filters Name=prefix-list-id,Values=$plid | jq -r '.PrefixLists[].Version')
     logit "Updated version of $1 ($3) is V$currentVersion"
     UPDT="/root/output/"$plid"_V"$currentVersion"_Current-CIDRs.txt"
-    aws ec2 get-managed-prefix-list-entries --prefix-list-id $plid --region eu-central-1 | jq -r '.Entries[].Cidr' | sort > $UPDT
+    aws ec2 get-managed-prefix-list-entries --prefix-list-id $plid --region $3 | jq -r '.Entries[].Cidr' | sort > $UPDT
     logit "Logged new version of $1 ($3) into $UPDT"
   fi
 }
