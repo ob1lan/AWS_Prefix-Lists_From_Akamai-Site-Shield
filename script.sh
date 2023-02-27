@@ -16,8 +16,9 @@ logit()
 evaluate_pl() {
   local plid="$1"
   local mapname="$2"
+  local region="$3"
 
-  logit "Going to evaluate $1 against $2"
+  logit "Going to evaluate $1 ($3) against $2"
 
   PROP="/root/output/"$mapname"_proposed.txt"
 
@@ -26,9 +27,9 @@ evaluate_pl() {
   logit "Logged $2 proposed CIDRs into $PROP"
 
   # Then, get the specified AWS Managed Prefix List CIDRs into a PL-ID_Vxx_Current-CIDRs.txt
-  currentVersion=$(aws ec2 describe-managed-prefix-lists --region eu-central-1 --filters Name=prefix-list-id,Values=$plid | jq -r '.PrefixLists[].Version')
+  currentVersion=$(aws ec2 describe-managed-prefix-lists --region $3 --filters Name=prefix-list-id,Values=$plid | jq -r '.PrefixLists[].Version')
   CURRENT="/root/output/"$plid"_V"$currentVersion"_Current-CIDRs.txt"
-  aws ec2 get-managed-prefix-list-entries --prefix-list-id $plid --region eu-central-1 | jq -r '.Entries[].Cidr' | sort > $CURRENT
+  aws ec2 get-managed-prefix-list-entries --prefix-list-id $plid --region $3 | jq -r '.Entries[].Cidr' | sort > $CURRENT
   logit "Logged $1 current CIDRs into $CURRENT"
 
   # Finally, evaluate the content of the PL-ID_Vxx_Current-CIDRs.txt against the MAP-NAME_proposed.txt to obtain details on the changes: PL-ID_Vxx_ToBeAdded.txt and PL-ID_Vxx_ToBeRemoved.txt
@@ -64,20 +65,21 @@ evaluate_pl() {
   UNC="/root/output/"$plid"_V"$currentVersion"_UnchangedFromCurrent.txt"
   comm -12 $CURRENT $PROP > $UNC
   logit "Logged unchanged CIDRs in $1 into $UNC"
-  logit "Finished to evaluate $1 against $2"
+  logit "Finished to evaluate $1 ($3) against $2"
 }
 
 refresh_pl() {
   local plid="$1"
   local mapname="$2"
-  logit "Going to refresh $1 with values from $2"
+  local region="$3"
+  logit "Going to refresh $1 ($3) with values from $2"
 
   evaluate_pl $1 $2
   if [ ! -s "${TBD}" ] && [ ! -s "${TBA}" ]; then
     logit "Nothing to change in $1, exiting now"
     exit 125
   else
-    logit "Changes to be applied on $1, will continue now"
+    logit "Changes to be applied on $1 ($3), will continue now"
   fi
 
   # Removes entries from the specified Prefix List
@@ -86,14 +88,14 @@ refresh_pl() {
 
   # Check if the file is empty
   if [ ! -s "${TBD}" ]; then
-    logit "Nothing to remove from $1"
+    logit "Nothing to remove from $1 ($3)"
   else
     for CIDR in $(cat $TBD); do CIDRs_RM="$CIDRs_RM""Cidr=""$CIDR "; done
 
-    currentVersion=$(aws ec2 describe-managed-prefix-lists --region eu-central-1 --filters Name=prefix-list-id,Values=$plid | jq -r '.PrefixLists[].Version')
-    logit "Current version of $1 is V$currentVersion"
-    aws ec2 modify-managed-prefix-list --prefix-list-id $plid --region eu-central-1 --remove-entries $CIDRs_RM --current-version $currentVersion >> $LOG_FILE
-    logit "Removed entries from $1 using content of $TBD"
+    currentVersion=$(aws ec2 describe-managed-prefix-lists --region $3 --filters Name=prefix-list-id,Values=$plid | jq -r '.PrefixLists[].Version')
+    logit "Current version of $1 ($3) is V$currentVersion"
+    aws ec2 modify-managed-prefix-list --prefix-list-id $plid --region $3 --remove-entries $CIDRs_RM --current-version $currentVersion >> $LOG_FILE
+    logit "Removed entries from $1 ($3) using content of $TBD"
     echo -e "${RED}Those CIDRs have been removed:"
     echo -e "$CIDRs_RM"${NC}
   fi
@@ -105,36 +107,37 @@ refresh_pl() {
 
   # Check if the file is empty
   if [ ! -s "${TBA}" ]; then
-    logit "Nothing to add in $1"
+    logit "Nothing to add in $1 ($3)"
   else
     for CIDR_ADD in $(cat $TBA) ; do CIDRs_ADD="$CIDRs_ADD""Cidr=""$CIDR_ADD "; done
-    logit "Will now add entries to $1 using content of $TBA"
+    logit "Will now add entries to $1 ($3) using content of $TBA"
 
-    currentVersion=$(aws ec2 describe-managed-prefix-lists --region eu-central-1 --filters Name=prefix-list-id,Values=$plid | jq -r '.PrefixLists[].Version')
-    aws ec2 modify-managed-prefix-list --prefix-list-id $plid --region eu-central-1 --add-entries $CIDRs_ADD --current-version $currentVersion >> $LOG_FILE
+    currentVersion=$(aws ec2 describe-managed-prefix-lists --region $3 --filters Name=prefix-list-id,Values=$plid | jq -r '.PrefixLists[].Version')
+    aws ec2 modify-managed-prefix-list --prefix-list-id $plid --region $3 --add-entries $CIDRs_ADD --current-version $currentVersion >> $LOG_FILE
     echo -e "${GREEN}Those CIDRs have been added:"
     echo -e "$CIDRs_ADD"${NC}
 
     # Finally, get the latest version of the Prefix List for documentation and to confirm the changes
-    currentVersion=$(aws ec2 describe-managed-prefix-lists --region eu-central-1 --filters Name=prefix-list-id,Values=$plid | jq -r '.PrefixLists[].Version')
-    logit "Updated version of $1 is V$currentVersion"
+    currentVersion=$(aws ec2 describe-managed-prefix-lists --region $3 --filters Name=prefix-list-id,Values=$plid | jq -r '.PrefixLists[].Version')
+    logit "Updated version of $1 ($3) is V$currentVersion"
     UPDT="/root/output/"$plid"_V"$currentVersion"_Current-CIDRs.txt"
     aws ec2 get-managed-prefix-list-entries --prefix-list-id $plid --region eu-central-1 | jq -r '.Entries[].Cidr' | sort > $UPDT
-    logit "Logged new version of $1 into $UPDT"
+    logit "Logged new version of $1 ($3) into $UPDT"
   fi
 }
 
 # The following function is used for testing only, as a mean to quickly empty a test Prefix List
 empty_pl() {
   local plid="$1"
+  local region="$2"
   # Empties the specified Prefix List
-  toBeRemoved=$(aws ec2 get-managed-prefix-list-entries --prefix-list-id $plid --region eu-central-1 | jq -r '.Entries[].Cidr')
+  toBeRemoved=$(aws ec2 get-managed-prefix-list-entries --prefix-list-id $plid --region $2 | jq -r '.Entries[].Cidr')
 
   CIDRs_RM=""
   for CIDR in $toBeRemoved; do CIDRs_RM="$CIDRs_RM""Cidr=""$CIDR "; done
 
-  currentVersion=$(aws ec2 describe-managed-prefix-lists --region eu-central-1 --filters Name=prefix-list-id,Values=$plid | jq -r '.PrefixLists[].Version')
-  aws ec2 modify-managed-prefix-list --prefix-list-id $plid --region eu-central-1 --remove-entries $CIDRs_RM --current-version $currentVersion
+  currentVersion=$(aws ec2 describe-managed-prefix-lists --region $2 --filters Name=prefix-list-id,Values=$plid | jq -r '.PrefixLists[].Version')
+  aws ec2 modify-managed-prefix-list --prefix-list-id $plid --region $2 --remove-entries $CIDRs_RM --current-version $currentVersion
 }
 
 case "$1" in
